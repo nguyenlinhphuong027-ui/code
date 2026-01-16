@@ -1,0 +1,35 @@
+import express from "express";
+import cors from "cors";
+import admin from "firebase-admin";
+import serviceAccount from "./serviceAccountKey.json" assert { type: "json" };
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const db = admin.firestore();
+
+const app = express();
+
+// ✅ CORS cho máy khác truy cập
+app.use(cors({ origin: "*" }));
+app.use(express.json());
+
+// ✅ API
+app.get("/api/drugs", async (req, res) => {
+  try {
+    const snap = await db.collection("drugs").get();
+    const data = snap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ✅ QUAN TRỌNG: listen public
+app.listen(3000, "0.0.0.0", () => {
+  console.log("Backend running on port 3000");
+});
